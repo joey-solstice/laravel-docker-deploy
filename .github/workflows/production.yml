@@ -1,0 +1,29 @@
+name: Production Deploy
+
+# Trigger only when someone pushes to production
+on:
+  push:
+    branches:
+      - production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest   # GitHub provides a Linux machine
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4  # Download your repo files
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.1
+        with:
+          ssh-private-key: ${{ secrets.DO_DEPLOY_KEY }}  # Connect to your server
+
+      - name: Deploy to server
+        run: |
+          ssh -o StrictHostKeyChecking=no root@YOUR_DROPLET_IP << 'EOF'
+            cd /var/www/laravel-app         # Go to your app folder
+            git pull origin production      # Pull latest code from GitHub
+            docker compose down             # Stop containers
+            docker compose up -d --build   # Rebuild & start containers
+          EOF
